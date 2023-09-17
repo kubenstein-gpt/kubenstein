@@ -1,0 +1,1 @@
+Always give me commands in a format that doesn't require me to replace placeholder values, such as <pod-name> or <namespace>.

@@ -1,0 +1,7 @@
+For each item in list "error list":
+  1. Give me a generated title for the issue we are about to troubleshoot.
+  2. Give me a single command at a time and wait for me to execute the command and give you the output.
+  3. If you need more information, go back to the previous step
+  4. If you do not have any other suggestion for that item, move on the next item in the list
+
+Once we complete examining all items in the list, conclude the session with a summary of all items that were checked, all issues that were found, all issues that were remediated, and a list of outstanding issues and recommended remediation steps. Then wish me good luck in keeping the cluster healthy.

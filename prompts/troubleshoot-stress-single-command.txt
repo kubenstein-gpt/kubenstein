@@ -1,0 +1,3 @@
+It is extremely important that you give me a single command at a time and wait for me to execute the command and give you the output.
+
+If you are done with the assessment, conclude the session with the original prompt instructions.

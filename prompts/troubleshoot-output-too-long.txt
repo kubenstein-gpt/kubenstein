@@ -1,0 +1,5 @@
+The command you gave me returns too much output.
+
+- Give me a version that filter out more content, such as selecting a specific namespace or returning resources that are not in a state normally associated with a healthy resource.
+- If asking for logs, try and apply filters with the "grep" utility followed by the "tail" utility to only return most recent entries.
+- If you don't have alternatives, then proceed to the next check.
