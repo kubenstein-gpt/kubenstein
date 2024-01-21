@@ -79,13 +79,14 @@ def format_chat(chat_messages, format_type="plain_text"):
             role = message.get("role")
             content = message.get("content")
 
-            if role == "system":
-                # Wrap system messages in code block for Markdown
-                content = f"system:\n\n```\n{content}\n```"
+            party = "kubenstein"
+            if role == "user":
+                party = "kubenstein"
             elif role == "assistant":
-                # Wrap assistant messages in code block for Markdown
-                content = f"```\n{content}\n```"
-            result += content + "\n"
+                party = "AI"
+            markdown_content = f"\n**{party}:**\n\n~~~txt\n{content}\n~~~\n"
+
+            result += markdown_content
     else:
         raise Exception(f"Invalid format_type: {format_type}")
 
