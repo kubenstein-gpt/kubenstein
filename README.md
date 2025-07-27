@@ -153,11 +153,8 @@ You can access the Contributor Covenant [here](/CODE_OF_CONDUCT.md).
 ## Changelog
 
 - 2023-09-17 First draft
+- 2025-07-27 Support local ollama server
 
 ## FAQ
 
 (under construction)
-
-## Screenshots
-
-- Include screenshots or diagrams for visual representation.

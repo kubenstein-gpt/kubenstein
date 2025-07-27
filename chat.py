@@ -10,6 +10,15 @@ import sys
 import tempfile
 import time
 
+from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
+
+from langchain.output_parsers import PydanticOutputParser
+from langchain.prompts import ChatPromptTemplate
+from pydantic import BaseModel, Field
+from typing import Optional
+
+
 import tiktoken
 import openai
 
@@ -45,7 +54,9 @@ def configure_logging():
 
 def parse_cli_arguments():
     parser = argparse.ArgumentParser(
-        description='Demonstrate the kubernetes_gpt project')
+        description='Showcases the kubenstein project')
+    parser.add_argument('--local',
+                        action='store_true')
     parser.add_argument('--openai-key',
                         default=OPENAI_API_KEY,
                         help='As the name suggests.')
@@ -93,12 +104,45 @@ def format_chat(chat_messages, format_type="plain_text"):
     return result
 
 
+def extract_kubectl_command(response_text):
+    """
+    Extracts a single kubectl command from a multi-line response.
+    Supports extraction even if the command is wrapped in triple backticks.
+    """
+
+    if response_text.count("kubectl") != 1:
+        return None
+
+    # some models insist on adding ``` around the command
+    match = re.findall(r"`(kubectl.[^`]*)`", response_text, re.DOTALL)
+    if len(match) == 1:
+        return match[0]
+
+    # Step 1: Extract content inside triple backticks, if any
+    code_blocks = re.findall(r"```(?:bash|sh)?\n(.*?)\n```", response_text, re.DOTALL)
+
+    if code_blocks:
+        # Assume the first code block contains the kubectl command
+        candidate = code_blocks[0].strip()
+    else:
+        # If no code block, fallback to extracting the first line that starts with 'kubectl'
+        lines = response_text.strip().splitlines()
+        candidate_lines = [line.strip() for line in lines if line.strip().startswith("kubectl")]
+        candidate = candidate_lines[0] if candidate_lines else ""
+
+    # Final check: make sure it's a kubectl command
+    if candidate.startswith("kubectl"):
+        return candidate
+    else:
+        return None
+    
+
 #
 #
 #
 def troubleshoot_cluster():
 
-    gpt_model = "gpt-3.5-turbo"
+    gpt_model = "gpt-4"
 
     # https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
     encoding = tiktoken.get_encoding("cl100k_base")
@@ -160,36 +204,10 @@ def troubleshoot_cluster():
                         f"{len(chat_messages)} interactions"))
                     wrap_it_up = True
 
-            # The model with the larger 16k token context
-            # is 2x the price per token than the regular
-            # 4k token.
-            if conversation_tokens > 4000 and \
-                    gpt_model == "gpt-3.5-turbo":
-                gpt_model = "gpt-3.5-turbo-16k"
-                logger.info((f"Switching to {gpt_model} model "
-                             "to accommodate longer conversation."))
-
             # Generate text using the OpenAI API
-            try:
-                response = openai.ChatCompletion.create(
-                    model=gpt_model,
-                    messages=chat_messages
-                )
-            except openai.InvalidRequestError as e:
-                logger.error(e)
-                break
-
-            gpt_response_message = response['choices'][0]['message']
-            gpt_response_content = gpt_response_message['content']
-            gpt_response_role = gpt_response_message['role']
-            # gpt_response_role = "assistant"
-            # gpt_response_content = (
-            #     "OK, let's start with the "
-            #     "first item on the checklist: Nodes.\n\nTo check the "
-            #     "overall status of the nodes in the cluster, please "
-            #     "run the following command:\n\n"
-            #     "```\nkubectl get nodes\n"
-            #     "###")
+            response = llm.invoke(chat_messages)
+            gpt_response_content = response.content
+            gpt_response_role = "assistant"
 
             chat_messages.append({
                 "role": gpt_response_role,
@@ -197,7 +215,7 @@ def troubleshoot_cluster():
                 })
 
             if session_over or \
-                    "++++" in gpt_response_content or \
+                    "+++" in gpt_response_content or \
                     "good luck" in gpt_response_content.lower():
                 session_over = True
                 logger.info("ChatGPT concluded the session")
@@ -211,10 +229,8 @@ def troubleshoot_cluster():
                 consecutive_nudges = 0
                 continue
 
-            match = re.search(r'kubectl\s+[^\n]+', gpt_response_content)
-            if match:
-                new_command = match.group(0)
-            else:
+            new_command = extract_kubectl_command(gpt_response_content)
+            if new_command == None:
                 chat_messages.append({
                     "role": "user",
                     "content": stress_single_command})
@@ -243,9 +259,17 @@ def troubleshoot_cluster():
                 command_output = e.output.decode('utf-8')
                 logger.error((f"The command failed: [{e.returncode}]\n"
                               f"{command_output}"))
-                chat_messages.append({
-                    "role": "user",
-                    "content": command_output})
+
+                command_output_len = len(encoding.encode(command_output))
+                if command_output_len <= 500:
+                    chat_messages.append({"role": "user",
+                                          "content": command_output})
+                else:
+                    chat_messages.append({"role": "user",
+                                          "content": prompt_output_too_long})
+                    consecutive_nudges += 1
+                    continue
+
                 consecutive_errors += 1
                 if consecutive_errors > 6:
                     logger.info(("Troubleshooting is not converging. "
@@ -300,7 +324,23 @@ if __name__ == '__main__':
     logger = configure_logging()
 
     args = parse_cli_arguments()
-    openai_key = args.openai_key
+    if args.local:
+        llm = ChatOllama(
+            # model="granite3.3",
+            model="llama3:instruct",
+            temperature=0,
+            max_new_tokens=1000
+        )
+    else:
+        llm = ChatOpenAI(
+            model="gpt-4.1",
+            temperature=0,
+            max_tokens=None,
+            timeout=None,
+            max_retries=2,
+            api_key=OPENAI_API_KEY
+        )
+
     chat_messages = troubleshoot_cluster()
 
     output_format = args.output

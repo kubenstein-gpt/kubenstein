@@ -1,4 +1,7 @@
 kubernetes
-
+langchain
+langchain-ollama
+langchain-openai
+ollama
 openai
 tiktoken

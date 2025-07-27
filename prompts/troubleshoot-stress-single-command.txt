@@ -1,3 +1,12 @@
-It is extremely important that you give me a single command at a time and wait for me to execute the command and give you the output.
+You must strictly follow the original instructions.
 
-If you are done with the assessment, conclude the session with the original prompt instructions.
+- Only output a single kubectl command.
+- Do not include explanations, extra text, or multiple commands.
+- Do not add escaping characters to the command.
+- Wait for me to execute the command and provide the output before continuing.
+
+If you have completed the cluster health assessment and troubleshooting:
+
+- Conclude the session by following the final output format described in the original prompt.
+
+Do not proceed unless all instructions above are followed exactly.

@@ -29,7 +29,8 @@ As the application structure evolves, one should see more Python library folders
 
 - A Python 3.10 (or later) runtime environment
 - Cluster credentials with administrative privileges to a Kubernetes cluster
-- An API Key to ChatGPT
+- An API Key to ChatGPT (if not using local development mode)
+- Ollama server running Llama 3
 
 ### Installation
 
@@ -59,6 +60,20 @@ LOGGING_LEVEL=debug
 EOF
 ```
 
+### Local LLM
+
+You can run Kubenstein based on the ollama server. First start the ollama server with the llama3 model, then launch Kubenestein with the `--local` parameter.
+
+Starting ollama server with llama3 model
+
+```sh
+# in one terminal window
+ollama serve
+
+# on another terminal window
+ollama run llama3:instruct
+```
+
 ### Usage
 
 Activate the virtual environment:
@@ -68,10 +83,16 @@ ${VIRTUAL_ENV_DIR}/bin/activate
 pip install -r requirements.txt
 ```
 
-Launch the application:
+If using OpenAI, launch the application with:
 
 ```sh
 python --env-file $HOME/etc/k8s-chat.env app.py
+```
+
+If using a local ollama server, launch the application with:
+
+```sh
+python --local --env-file $HOME/etc/k8s-chat.env app.py
 ```
 
 ## Coding Standards
