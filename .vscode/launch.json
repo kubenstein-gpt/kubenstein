@@ -6,23 +6,23 @@
   "configurations": [
     {
       "name": "Python: Current File",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "args": ["--output", "json"],
+      "args": ["--local", "--output", "markdown"],
       "envFile": "${userHome}/etc/k8s-gpt-dev.env"
     },
     {
       "name": "Python: Debug File",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "purpose": ["debug-test"],
       "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": true,
-      "args": ["--output", "json"],
+      "args": ["--local", "--output", "markdown"],
       "envFile": "${userHome}/etc/k8s-gpt-dev.env"
     }
   ]
